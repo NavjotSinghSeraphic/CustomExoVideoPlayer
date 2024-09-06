@@ -11,7 +11,6 @@
         android:layout_width="120dp"
         android:layout_height="40dp"
         android:drawableEnd="@drawable/ic_replay_black_24dp"
-        android:drawableRight="@drawable/ic_replay_black_24dp"
         android:paddingEnd="@dimen/global_padding"
         android:paddingRight="@dimen/global_padding"
         android:text="@string/title_retry" />

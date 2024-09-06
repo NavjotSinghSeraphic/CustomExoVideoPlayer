@@ -23,7 +23,7 @@ class MainActivity : AppCompatActivity(), CustomExoPlayerListener, View.OnClickL
 
         andExoPlayerView = findViewById(R.id.andExoPlayerView)
 
-        andExoPlayerView.setResizeMode(EnumResizeMode.FILL) // sync with attrs
+        andExoPlayerView.setResizeMode(EnumResizeMode.FIT) // sync with attrs
         andExoPlayerView.setAndExoPlayerListener(this)
         andExoPlayerView.setPlayWhenReady(true)
 

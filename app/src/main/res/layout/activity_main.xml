@@ -11,16 +11,14 @@
         android:id="@+id/andExoPlayerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        app:andexo_show_controller="true"
-        app:andexo_show_full_screen="true" />
+        android:layout_weight="1" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:padding="@dimen/global_padding"
+        android:padding="10dp"
         android:scrollbars="vertical">
 
         <LinearLayout

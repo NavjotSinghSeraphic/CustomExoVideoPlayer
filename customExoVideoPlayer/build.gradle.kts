@@ -58,6 +58,8 @@ dependencies {
     api ("com.google.android.exoplayer:exoplayer-ui:2.19.1")
     api ("com.google.android.exoplayer:exoplayer-hls:2.19.1")
     api ("com.google.android.exoplayer:exoplayer-dash:2.19.1")
+//    implementation ("com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava")
+
 }
 publishing {
     publications {
@@ -68,4 +70,3 @@ publishing {
         }
     }
 }
-
