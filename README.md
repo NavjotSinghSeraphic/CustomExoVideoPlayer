@@ -26,6 +26,6 @@
 
     ```kotlin
         dependencies {
-	        implementation 'com.github.NavjotSinghSeraphic:CustomExoVideoPlayer:1.0'
+	        implementation 'com.github.NavjotSinghSeraphic:CustomExoVideoPlayer:tag'
         }
     ```
