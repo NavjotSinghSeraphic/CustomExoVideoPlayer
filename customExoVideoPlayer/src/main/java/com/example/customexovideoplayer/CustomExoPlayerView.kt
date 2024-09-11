@@ -7,9 +7,21 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.content.res.TypedArray
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.annotation.OptIn
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.PlaybackParameters
+import androidx.media3.common.Player
+import androidx.media3.common.Timeline
+import androidx.media3.common.Tracks
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
 import com.example.customexovideoplayer.globalEnums.EnumAspectRatio
 import com.example.customexovideoplayer.globalEnums.EnumMute
 import com.example.customexovideoplayer.globalEnums.EnumRepeatMode
@@ -20,21 +32,19 @@ import com.example.customexovideoplayer.utils.DoubleClick
 import com.example.customexovideoplayer.utils.DoubleClickListener
 import com.example.customexovideoplayer.utils.PublicFunctions
 import com.example.customexovideoplayer.utils.PublicValues
-import com.google.android.exoplayer2.*
-import com.google.android.exoplayer2.ui.AspectRatioFrameLayout
-import com.google.android.exoplayer2.util.MimeTypes
+
 
 
 
 class CustomExoPlayerView(
     context: Context,
     attributeSet: AttributeSet
-) : CustomExoPlayerRoot(context, attributeSet), /*Player.EventListener ,*/ Player.Listener {
+) : CustomExoPlayerRoot(context, attributeSet), Player.Listener {
 
     private lateinit var currSource: String
 
-    private var player: SimpleExoPlayer = SimpleExoPlayer.Builder(context).build()
-    private var andExoPlayerListener: CustomExoPlayerListener? = null
+    private var player: ExoPlayer = ExoPlayer.Builder(context).build()
+    private var customPlayerPlayerListener: CustomExoPlayerListener? = null
     private var currPlayWhenReady: Boolean = true
     private var playbackPosition: Long = 0
     private var currentWindow: Int = 0
@@ -43,6 +53,7 @@ class CustomExoPlayerView(
     override var customClickListener: DoubleClick
         get() = DoubleClick(object : DoubleClickListener {
             override fun onSingleClickEvent(view: View) {
+                Log.e("CustomExoPlayerView", "onSingleClickEvent:clicked " )
                 when (view.id) {
                     retryButton.id -> {
                         hideRetryView()
@@ -60,11 +71,12 @@ class CustomExoPlayerView(
                     exitFullScreen.id -> {
                         setScreenMode(EnumScreenMode.MINIMISE)
                     }
-                }
-            }
-
-            override fun onDoubleClickEvent(view: View) {
-                when (view.id) {
+                    exoPlay.id->{
+                        startPlayer()
+                    }
+                    exoPause.id->{
+                        pausePlayer()
+                    }
                     backwardView.id -> {
                         seekBackward()
                     }
@@ -73,10 +85,21 @@ class CustomExoPlayerView(
                     }
                 }
             }
+
+            override fun onDoubleClickEvent(view: View) {
+                Log.e("CustomExoPlayerView", "onDoubleClickEvent:clicked " )
+
+            }
         })
         set(value) {}
 
     init {
+        inflate(context, R.layout.video_player_exo_controllers_kotlin, this)
+        playerView = findViewById(R.id.playerView)
+        exoPlay = findViewById(R.id.exo_play)
+        exoPause = findViewById(R.id.exo_pause)
+        // Add other button initializations here...
+
         player.addListener(this)
         extractAttrs(attributeSet)
     }
@@ -86,54 +109,70 @@ class CustomExoPlayerView(
         attributeSet.let {
 
             val typedArray: TypedArray =
-                context.obtainStyledAttributes(it, R.styleable.AndExoPlayerView)
+                context.obtainStyledAttributes(it, R.styleable.CustomExoPlayerView)
 
-            if (typedArray.hasValue(R.styleable.AndExoPlayerView_andexo_aspect_ratio)) {
+            if (typedArray.hasValue(R.styleable.CustomExoPlayerView_custom_player_aspect_ratio)) {
                 val aspectRatio = typedArray.getInteger(
-                    R.styleable.AndExoPlayerView_andexo_aspect_ratio,
+                    R.styleable.CustomExoPlayerView_custom_player_aspect_ratio,
                     EnumAspectRatio.ASPECT_16_9.value
                 )
                 setAspectRatio(EnumAspectRatio[aspectRatio])
             }
 
-            if (typedArray.hasValue(R.styleable.AndExoPlayerView_andexo_resize_mode)) {
+            if (typedArray.hasValue(R.styleable.CustomExoPlayerView_custom_player_resize_mode)) {
                 val resizeMode: Int = typedArray.getInteger(
-                    R.styleable.AndExoPlayerView_andexo_resize_mode,
+                    R.styleable.CustomExoPlayerView_custom_player_resize_mode,
                     EnumResizeMode.FILL.value
                 )
                 setResizeMode(EnumResizeMode[resizeMode])
             }
 
-            if (typedArray.hasValue(R.styleable.AndExoPlayerView_andexo_play_when_ready)) {
+            if (typedArray.hasValue(R.styleable.CustomExoPlayerView_custom_player_play_when_ready)) {
                 setPlayWhenReady(
                     typedArray.getBoolean(
-                        R.styleable.AndExoPlayerView_andexo_play_when_ready,
+                        R.styleable.CustomExoPlayerView_custom_player_play_when_ready,
                         true
                     )
                 )
             }
 
-            if (typedArray.hasValue(R.styleable.AndExoPlayerView_andexo_mute)) {
+            if (typedArray.hasValue(R.styleable.CustomExoPlayerView_custom_player_mute)) {
                 val muteValue = typedArray.getInteger(
-                    R.styleable.AndExoPlayerView_andexo_mute,
+                    R.styleable.CustomExoPlayerView_custom_player_mute,
                     EnumMute.UNMUTE.value
                 )
                 setMute(EnumMute[muteValue])
             }
 
-            if (typedArray.hasValue(R.styleable.AndExoPlayerView_andexo_show_controller)) {
+            if (typedArray.hasValue(R.styleable.CustomExoPlayerView_custom_player_show_controller)) {
                 setShowControllers(
                     typedArray.getBoolean(
-                        R.styleable.AndExoPlayerView_andexo_show_controller,
+                        R.styleable.CustomExoPlayerView_custom_player_show_controller,
                         true
                     )
                 )
             }
 
-            if (typedArray.hasValue(R.styleable.AndExoPlayerView_andexo_show_full_screen)) {
+            if (typedArray.hasValue(R.styleable.CustomExoPlayerView_custom_player_show_full_screen)) {
                 setShowFullScreenButton(
                     typedArray.getBoolean(
-                        R.styleable.AndExoPlayerView_andexo_show_full_screen,
+                        R.styleable.CustomExoPlayerView_custom_player_show_full_screen,
+                        true
+                    )
+                )
+            }
+            if (typedArray.hasValue(R.styleable.CustomExoPlayerView_showHideFullScreenIcon)) {
+                setShowFullScreenIcon(
+                    typedArray.getBoolean(
+                        R.styleable.CustomExoPlayerView_showHideFullScreenIcon,
+                        true
+                    )
+                )
+            }
+            if (typedArray.hasValue(R.styleable.CustomExoPlayerView_showHideMute_icon)) {
+                setShowMuteIcon(
+                    typedArray.getBoolean(
+                        R.styleable.CustomExoPlayerView_showHideMute_icon,
                         true
                     )
                 )
@@ -142,6 +181,25 @@ class CustomExoPlayerView(
             typedArray.recycle()
         }
     }
+    fun setShowMuteIcon(show: Boolean) {
+        if (show) {
+            mute.visibility = View.VISIBLE
+            unMute.visibility = View.VISIBLE
+        } else {
+            mute.visibility = View.GONE
+            unMute.visibility = View.GONE
+        }
+    }
+     fun setShowFullScreenIcon(show: Boolean) {
+        if (show) {
+            enterFullScreen.visibility = View.VISIBLE
+            exitFullScreen.visibility = View.VISIBLE
+        } else {
+            enterFullScreen.visibility = View.GONE
+            exitFullScreen.visibility = View.GONE
+        }
+    }
+
 
     override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
     }
@@ -151,36 +209,45 @@ class CustomExoPlayerView(
 
     override fun onPlayerError(error: PlaybackException) {
         showRetryView(error.message)
-        andExoPlayerListener?.let {
-            andExoPlayerListener!!.onExoPlayerError(errorMessage = error.message)
+        customPlayerPlayerListener?.let {
+            customPlayerPlayerListener!!.onExoPlayerError(errorMessage = error.message)
         }
     }
 
-    override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
+
+    @UnstableApi
+    override fun onPlaybackStateChanged(playbackState: Int) {
         when (playbackState) {
             ExoPlayer.STATE_BUFFERING -> {
-                andExoPlayerListener?.onExoBuffering()
+                customPlayerPlayerListener?.onExoBuffering()
             }
             ExoPlayer.STATE_ENDED -> {
-                andExoPlayerListener?.onExoEnded()
-            }
-            ExoPlayer.STATE_IDLE -> {
-                andExoPlayerListener?.onExoIdle()
-            }
-            ExoPlayer.STATE_READY -> {
-                andExoPlayerListener?.onExoReady()
-            }
-            else -> {
+                customPlayerPlayerListener?.onExoEnded()
+                // Update UI: show Play button, hide Pause button
+                exoPlay.visibility = View.VISIBLE
+                exoPause.visibility = View.GONE
+                player.playWhenReady = false
+                player.seekTo(0)
 
             }
+            ExoPlayer.STATE_IDLE -> {
+                customPlayerPlayerListener?.onExoIdle()
+            }
+            ExoPlayer.STATE_READY -> {
+                customPlayerPlayerListener?.onExoReady()
+                // Update UI based on whether the player is playing or paused
+                if (player.playWhenReady) {
+                    exoPlay.visibility = View.GONE
+                    exoPause.visibility = View.VISIBLE
+                } else {
+                    exoPlay.visibility = View.VISIBLE
+                    exoPause.visibility = View.GONE
+                }
+            }
+            else -> { }
         }
     }
 
-    override fun onLoadingChanged(isLoading: Boolean) {
-    }
-
-    override fun onPositionDiscontinuity(reason: Int) {
-    }
 
     override fun onRepeatModeChanged(repeatMode: Int) {
     }
@@ -188,10 +255,11 @@ class CustomExoPlayerView(
     override fun onTimelineChanged(timeline: Timeline, reason: Int) {
     }
 
+    @OptIn(UnstableApi::class)
     fun releasePlayer() {
         currPlayWhenReady = player.playWhenReady
         playbackPosition = player.currentPosition
-        currentWindow = player.currentWindowIndex
+        currentWindow = player.currentMediaItemIndex
         player.stop()
         player.release()
     }
@@ -201,64 +269,58 @@ class CustomExoPlayerView(
         player.prepare()
     }
 
-    private fun buildMediaItem(source: String, extraHeaders: HashMap<String, String>): MediaItem {
+    private fun buildMediaItem(source: String): MediaItem {
 
-        return when (PublicFunctions.getMimeType(source)) {
+        return when (PublicFunctions.getMimeType(source)){
 
-            PublicValues.KEY_MP4 -> buildMediaItemMP4(source, extraHeaders)
-            PublicValues.KEY_M3U8 -> buildMediaHLS(source, extraHeaders)
-            PublicValues.KEY_MP3 -> buildMediaItemMP4(source, extraHeaders)
+            PublicValues.KEY_MP4 -> buildMediaItemMP4(source)
+            PublicValues.KEY_M3U8 -> buildMediaHLS(source)
+            PublicValues.KEY_MP3 -> buildMediaItemMP4(source)
 
-            else -> buildMediaGlobal(source, extraHeaders)
+            else -> buildMediaGlobal(source)
         }
     }
 
     private fun buildMediaItemMP4(
-        source: String,
-        extraHeaders: HashMap<String, String>
+        source: String
+     
     ): MediaItem {
         return MediaItem.Builder()
             .setUri(source)
             .setMimeType(MimeTypes.APPLICATION_MP4)
-//            .setLicenseRequestHeaders(extraHeaders)
             .build()
     }
 
-    private fun buildMediaHLS(source: String, extraHeaders: HashMap<String, String>): MediaItem {
+    private fun buildMediaHLS(source: String): MediaItem {
         return MediaItem.Builder()
             .setUri(source)
             .setMimeType(MimeTypes.APPLICATION_M3U8)
-//            .setLicenseRequestHeaders(extraHeaders)
             .build()
     }
 
-    private fun buildMediaDash(source: String, extraHeaders: HashMap<String, String>): MediaItem {
+    private fun buildMediaDash(source: String): MediaItem {
         return MediaItem.Builder()
             .setUri(source)
             .setMimeType(MimeTypes.APPLICATION_MPD)
-//            .setLicenseRequestHeaders(extraHeaders)
             .build()
     }
 
-    private fun buildMediaGlobal(source: String, extraHeaders: HashMap<String, String>): MediaItem {
+    private fun buildMediaGlobal(source: String): MediaItem {
         return MediaItem.Builder()
             .setUri(source)
-//            .setLicenseRequestHeaders(extraHeaders)
             .build()
     }
 
-    fun setAndExoPlayerListener(andExoPlayerListener: CustomExoPlayerListener) {
-        this.andExoPlayerListener = andExoPlayerListener
+    fun setCustomPlayerPlayerListener(customPlayerPlayerListener: CustomExoPlayerListener) {
+        this.customPlayerPlayerListener = customPlayerPlayerListener
     }
 
     fun setSource(
-        source: String,
-        extraHeaders: HashMap<String, String> = hashMapOf<String, String>()
-    ) {
+        source: String) {
 
         currSource = source
 
-        val mediaItem = buildMediaItem(source, extraHeaders)
+        val mediaItem = buildMediaItem(source)
 
         playerView.player = player
         player.playWhenReady = currPlayWhenReady
@@ -266,16 +328,18 @@ class CustomExoPlayerView(
         player.prepare()
     }
 
-    fun seekBackward(backwardValue: Int = 10000) {
-        var seekValue = player.currentPosition - backwardValue
-        if (seekValue < 0) seekValue = 0
-        player.seekTo(seekValue)
+    fun seekBackward(backwardValue: Long = 10000) {
+        val currentPosition = player.currentPosition
+        val seekToPosition = (currentPosition - backwardValue).coerceAtLeast(0)
+        player.seekTo(seekToPosition)
+        Log.d("CustomExoPlayerView", "Seek backward to: $seekToPosition")
     }
 
-    fun seekForward(ForwardValue: Int = 10000) {
-        var seekValue = player.currentPosition + ForwardValue
-        if (seekValue > player.duration) seekValue = player.duration
-        player.seekTo(seekValue)
+    fun seekForward(forwardValue: Long = 10000) {
+        val currentPosition = player.currentPosition
+        val seekToPosition = (currentPosition + forwardValue).coerceAtMost(player.duration)
+        player.seekTo(seekToPosition)
+        Log.d("CustomExoPlayerView", "Seek forward to: $seekToPosition")
     }
 
     fun setShowControllers(showControllers: Boolean = true) {
@@ -285,6 +349,7 @@ class CustomExoPlayerView(
             setShowTimeOut(0)
     }
 
+    @OptIn(UnstableApi::class)
     fun setShowTimeOut(showTimeoutMs: Int) {
         playerView.controllerShowTimeoutMs = showTimeoutMs
         if (showTimeoutMs == 0)
@@ -334,6 +399,7 @@ class CustomExoPlayerView(
         }
     }
 
+    @OptIn(UnstableApi::class)
     fun setAspectRatio(aspectRatio: EnumAspectRatio) {
         this.currAspectRatio = aspectRatio
         val value = PublicFunctions.getScreenWidth()
@@ -364,6 +430,7 @@ class CustomExoPlayerView(
         }
     }
 
+    @OptIn(UnstableApi::class)
     fun setResizeMode(resizeMode: EnumResizeMode) {
         when (resizeMode) {
             EnumResizeMode.FIT -> playerView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
@@ -377,21 +444,32 @@ class CustomExoPlayerView(
         this.currPlayWhenReady = playWhenReady
         player.playWhenReady = playWhenReady
     }
+    fun startPlayer() {
+        player.playWhenReady = true
+        player.playbackState
+        // Update UI to show the Pause button and hide the Play button
+        exoPlay.visibility = View.GONE
+        exoPause.visibility = View.VISIBLE
+    }
 
     fun pausePlayer() {
         player.playWhenReady = false
         player.playbackState
+        // Update UI to show the Play button and hide the Pause button
+        exoPlay.visibility = View.VISIBLE
+        exoPause.visibility = View.GONE
     }
+
+
+
 
     fun stopPlayer() {
         player.stop()
         player.playbackState
+        player.seekTo(0)
     }
 
-    fun startPlayer() {
-        player.playWhenReady = true
-        player.playbackState
-    }
+
 
     fun setScreenMode(screenMode: EnumScreenMode = EnumScreenMode.MINIMISE) {
 

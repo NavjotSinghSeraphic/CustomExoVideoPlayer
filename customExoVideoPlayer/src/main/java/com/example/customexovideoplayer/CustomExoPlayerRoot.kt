@@ -5,10 +5,14 @@ import android.util.AttributeSet
 import android.view.View
 import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.annotation.OptIn
 import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.AppCompatImageButton
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.ui.PlayerView
 import com.example.customexovideoplayer.globalEnums.EnumAspectRatio
 import com.example.customexovideoplayer.globalEnums.EnumMute
 import com.example.customexovideoplayer.globalEnums.EnumPlaybackSpeed
@@ -17,8 +21,6 @@ import com.example.customexovideoplayer.globalEnums.EnumRepeatMode
 import com.example.customexovideoplayer.globalEnums.EnumResizeMode
 import com.example.customexovideoplayer.globalEnums.EnumScreenMode
 import com.example.customexovideoplayer.utils.DoubleClick
-import com.google.android.exoplayer2.ui.PlayerView
-
 
 abstract class CustomExoPlayerRoot @JvmOverloads constructor(
     context: Context,
@@ -32,14 +34,16 @@ abstract class CustomExoPlayerRoot @JvmOverloads constructor(
     var retryView: LinearLayout
     var retryViewTitle: TextView
     var retryButton: Button
-    var backwardView: AppCompatButton
-    var forwardView: AppCompatButton
+    var backwardView: ImageView
+    var forwardView: ImageView
     var mute: AppCompatImageButton
     var unMute: AppCompatImageButton
     var settingContainer: FrameLayout
     var fullScreenContainer: FrameLayout
     var enterFullScreen: AppCompatImageButton
     var exitFullScreen: AppCompatImageButton
+    var exoPlay: AppCompatImageButton
+    var exoPause: AppCompatImageButton
 
     abstract var customClickListener: DoubleClick
 
@@ -52,12 +56,13 @@ abstract class CustomExoPlayerRoot @JvmOverloads constructor(
     var currScreenMode: EnumScreenMode = EnumScreenMode.MINIMISE
 
     init {
-
-        // views
+        // Initialize views
         playerView = inflatedView.findViewById(R.id.playerView)
         retryView = inflatedView.findViewById(R.id.retry_view)
         backwardView = inflatedView.findViewById(R.id.exo_backward)
         forwardView = inflatedView.findViewById(R.id.exo_forward)
+        exoPlay = inflatedView.findViewById(R.id.exo_play)
+        exoPause = inflatedView.findViewById(R.id.exo_pause)
         retryViewTitle = retryView.findViewById(R.id.textView_retry_title)
         retryButton = retryView.findViewById(R.id.button_try_again)
         mute = playerView.findViewById(R.id.exo_mute)
@@ -67,29 +72,26 @@ abstract class CustomExoPlayerRoot @JvmOverloads constructor(
         enterFullScreen = playerView.findViewById(R.id.exo_enter_fullscreen)
         exitFullScreen = playerView.findViewById(R.id.exo_exit_fullscreen)
 
-        // listeners
+        // Initialize listeners
         initListeners()
     }
 
     private fun initListeners() {
-        retryButton.setOnClickListener(customClickListener)
-        backwardView.setOnClickListener(customClickListener)
-        forwardView.setOnClickListener(customClickListener)
-        mute.setOnClickListener(customClickListener)
-        unMute.setOnClickListener(customClickListener)
-        fullScreenContainer.setOnClickListener(customClickListener)
-        enterFullScreen.setOnClickListener(customClickListener)
-        exitFullScreen.setOnClickListener(customClickListener)
+        retryButton.setOnClickListener { customClickListener.onClick(retryButton) }
+        backwardView.setOnClickListener { customClickListener.onClick(backwardView) }
+        forwardView.setOnClickListener { customClickListener.onClick(forwardView) }
+        mute.setOnClickListener { customClickListener.onClick(mute) }
+        unMute.setOnClickListener { customClickListener.onClick(unMute) }
+        fullScreenContainer.setOnClickListener { customClickListener.onClick(fullScreenContainer) }
+        enterFullScreen.setOnClickListener { customClickListener.onClick(enterFullScreen) }
+        exitFullScreen.setOnClickListener { customClickListener.onClick(exitFullScreen) }
+        exoPlay.setOnClickListener { customClickListener.onClick(exoPlay) }
+        exoPause.setOnClickListener { customClickListener.onClick(exoPause) }
     }
 
-    protected fun showRetryView() {
-        showRetryView(null)
-    }
-
-    protected fun showRetryView(retryTitle: String?) {
+    protected fun showRetryView(retryTitle: String? = null) {
         retryView.visibility = VISIBLE
-        if (retryTitle != null)
-            retryViewTitle.text = retryTitle
+        retryTitle?.let { retryViewTitle.text = it }
     }
 
     protected fun hideRetryView() {
@@ -105,16 +107,15 @@ abstract class CustomExoPlayerRoot @JvmOverloads constructor(
     }
 
     protected fun setShowController(showController: Boolean = true) {
-        if (showController)
-            showController()
-        else
-            hideController()
+        if (showController) showController() else hideController()
     }
 
+    @OptIn(UnstableApi::class)
     protected fun showController() {
         playerView.showController()
     }
 
+    @OptIn(UnstableApi::class)
     protected fun hideController() {
         playerView.hideController()
     }
@@ -130,17 +131,11 @@ abstract class CustomExoPlayerRoot @JvmOverloads constructor(
     }
 
     protected fun setShowSettingButton(showSetting: Boolean = false) {
-        if (showSetting)
-            settingContainer.visibility = VISIBLE
-        else
-            settingContainer.visibility = GONE
+        settingContainer.visibility = if (showSetting) VISIBLE else GONE
     }
 
     protected fun setShowFullScreenButton(showFullscreenButton: Boolean = false) {
-        if (showFullscreenButton)
-            fullScreenContainer.visibility = VISIBLE
-        else
-            fullScreenContainer.visibility = GONE
+        fullScreenContainer.visibility = if (showFullscreenButton) VISIBLE else GONE
     }
 
     protected fun setShowScreenModeButton(screenMode: EnumScreenMode = EnumScreenMode.MINIMISE) {
@@ -161,19 +156,22 @@ abstract class CustomExoPlayerRoot @JvmOverloads constructor(
     }
 
     protected fun showSystemUI() {
-        playerView.systemUiVisibility = (SYSTEM_UI_FLAG_LOW_PROFILE
-                or SYSTEM_UI_FLAG_IMMERSIVE
-                or SYSTEM_UI_FLAG_FULLSCREEN
-                or SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                or SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                or SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+        playerView.systemUiVisibility = (
+                View.SYSTEM_UI_FLAG_LOW_PROFILE
+                        or View.SYSTEM_UI_FLAG_IMMERSIVE
+                        or View.SYSTEM_UI_FLAG_FULLSCREEN
+                        or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                        or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                )
     }
 
     protected fun hideSystemUI() {
-        playerView.systemUiVisibility = (SYSTEM_UI_FLAG_LOW_PROFILE
-                or SYSTEM_UI_FLAG_LAYOUT_STABLE)
+        playerView.systemUiVisibility = (
+                View.SYSTEM_UI_FLAG_LOW_PROFILE
+                        or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                )
     }
-
 }

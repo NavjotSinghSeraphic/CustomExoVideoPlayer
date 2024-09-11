@@ -1,23 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <declare-styleable name="AndExoPlayerView">
-        <attr name="andexo_resize_mode" />
-        <attr name="andexo_aspect_ratio" />
-        <attr name="andexo_loop" />
-        <attr name="andexo_mute" />
-        <attr name="andexo_show_full_screen" format="boolean" />
-        <attr name="andexo_play_when_ready" format="boolean" />
-        <attr name="andexo_show_controller" format="boolean" />
+    <declare-styleable name="CustomExoPlayerView">
+        <attr name="custom_player_resize_mode" />
+        <attr name="custom_player_aspect_ratio" />
+        <attr name="custom_player_loop" />
+        <attr name="custom_player_mute" />
+        <attr name="showHideFullScreenIcon" format="boolean"/>
+        <attr name="showHideMute_icon" format="boolean"/>
+        <attr name="custom_player_show_full_screen" format="boolean" />
+        <attr name="custom_player_play_when_ready" format="boolean" />
+        <attr name="custom_player_show_controller" format="boolean" />
     </declare-styleable>
 
-    <attr name="andexo_resize_mode" format="enum">
+    <attr name="custom_player_resize_mode" format="enum">
         <enum name="Fit" value="1" />
         <enum name="Fill" value="2" />
         <enum name="Zoom" value="3" />
     </attr>
 
-    <attr name="andexo_aspect_ratio" format="enum">
+    <attr name="custom_player_aspect_ratio" format="enum">
         <enum name="aspect_1_1" value="1" />
         <enum name="aspect_16_9" value="2" />
         <enum name="aspect_4_3" value="3" />
@@ -25,12 +27,12 @@
         <enum name="aspect_mp3" value="5" />
     </attr>
 
-    <attr name="andexo_loop" format="enum">
+    <attr name="custom_player_loop" format="enum">
         <enum name="infinite" value="1" />
         <enum name="finite" value="2" />
     </attr>
 
-    <attr name="andexo_mute" format="enum">
+    <attr name="custom_player_mute" format="enum">
         <enum name="mute" value="1" />
         <enum name="unmute" value="2" />
     </attr>

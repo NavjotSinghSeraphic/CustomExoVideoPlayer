@@ -1,5 +1,6 @@
 package com.example.customexovideoplayer
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -11,21 +12,25 @@ import com.example.customexovideoplayer.globalInterfaces.CustomExoPlayerListener
 import com.example.customexovideoplayer.utils.PathUtil
 import com.example.customexovideoplayer.utils.PublicFunctions
 import com.example.customexovideoplayer.utils.PublicValues
+
 import java.net.URISyntaxException
 
 class MainActivity : AppCompatActivity(), CustomExoPlayerListener, View.OnClickListener {
 
-    lateinit var andExoPlayerView: CustomExoPlayerView
+    lateinit var customExoPlayerView: CustomExoPlayerView
 
+    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        andExoPlayerView = findViewById(R.id.andExoPlayerView)
+        customExoPlayerView = findViewById(R.id.exoPlayerView)
 
-        andExoPlayerView.setResizeMode(EnumResizeMode.FIT) // sync with attrs
-        andExoPlayerView.setAndExoPlayerListener(this)
-        andExoPlayerView.setPlayWhenReady(true)
+        customExoPlayerView.setResizeMode(EnumResizeMode.FIT) // sync with attrs
+        customExoPlayerView.setCustomPlayerPlayerListener(this)
+        customExoPlayerView.setPlayWhenReady(true)
+        customExoPlayerView.setShowMuteIcon(false)
+        customExoPlayerView.setShowControllers(false)
 
         findViewById<AppCompatButton>(R.id.local).setOnClickListener(this)
         findViewById<AppCompatButton>(R.id.stream_mp4).setOnClickListener(this)
@@ -34,7 +39,7 @@ class MainActivity : AppCompatActivity(), CustomExoPlayerListener, View.OnClickL
         findViewById<AppCompatButton>(R.id.stream_mkv).setOnClickListener(this)
 
         // starter stream
-        loadMP4Stream(PublicValues.TEST_URL_MP4_V3)
+//        loadMP4Stream(PublicValues.TEST_URL_MP4_V3)
 
     }
 
@@ -96,15 +101,15 @@ class MainActivity : AppCompatActivity(), CustomExoPlayerListener, View.OnClickL
     }
 
     private fun loadMP4Locale(filePath: String) {
-        andExoPlayerView.setSource(filePath)
+        customExoPlayerView.setSource(filePath)
     }
 
     private fun loadMP4Stream(urlMP4: String) {
-        andExoPlayerView.setSource(urlMP4)
+        customExoPlayerView.setSource(urlMP4)
     }
 
     private fun loadHLSStream(urlHLS: String) {
-        andExoPlayerView.setSource(urlHLS)
+        customExoPlayerView.setSource(urlHLS)
     }
 
 }

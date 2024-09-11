@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("kotlin-kapt")
 }
 
 android {
@@ -11,8 +12,8 @@ android {
         applicationId = "com.example.customexovideoplayer"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -33,6 +34,9 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+    buildFeatures {
+        dataBinding = true
+    }
 }
 
 dependencies {
@@ -45,4 +49,9 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+
+    implementation ("androidx.media3:media3-exoplayer:1.4.1")
+    implementation ("androidx.media3:media3-ui:1.4.1")
+    implementation("androidx.media3:media3-exoplayer-dash:1.4.1")
+    implementation("androidx.media3:media3-exoplayer-hls:1.4.1")
 }

@@ -26,50 +26,63 @@ class PathUtil {
             val needToCheckUri = Build.VERSION.SDK_INT >= 19
             var selection: String? = null
             var selectionArgs: Array<String>? = null
-            // Uri is different in versions after KITKAT (Android 4.4), we need to
-            // deal with different Uris.
-            if (needToCheckUri && DocumentsContract.isDocumentUri(context.getApplicationContext(), uri)) {
+
+            if (needToCheckUri && DocumentsContract.isDocumentUri(context.applicationContext, uri)) {
                 if (isExternalStorageDocument(uri)) {
                     val docId = DocumentsContract.getDocumentId(uri)
                     val split = docId.split(":".toRegex()).toTypedArray()
                     return Environment.getExternalStorageDirectory().toString() + "/" + split[1]
                 } else if (isDownloadsDocument(uri)) {
                     val id = DocumentsContract.getDocumentId(uri)
-                    uri = ContentUris.withAppendedId(
-                            Uri.parse("content://downloads/public_downloads"), java.lang.Long.valueOf(id))
+
+                    // Check if the id is a valid numeric value
+                    if (id.startsWith("msf") || id.startsWith("raw:")) {
+                        return uri.toString()
+                    }
+
+                    try {
+                        uri = ContentUris.withAppendedId(
+                            Uri.parse("content://downloads/public_downloads"),
+                            java.lang.Long.valueOf(id)
+                        )
+                    } catch (e: NumberFormatException) {
+                        e.printStackTrace()
+                        return null
+                    }
                 } else if (isMediaDocument(uri)) {
                     val docId = DocumentsContract.getDocumentId(uri)
                     val split = docId.split(":".toRegex()).toTypedArray()
                     val type = split[0]
-                    if ("image" == type) {
-                        uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                    } else if ("video" == type) {
-                        uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
-                    } else if ("audio" == type) {
-                        uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                    when (type) {
+                        "image" -> uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                        "video" -> uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                        "audio" -> uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
                     }
                     selection = "_id=?"
                     selectionArgs = arrayOf(split[1])
                 }
             }
-            if ("content".equals(uri.getScheme(), ignoreCase = true)) {
+
+            if ("content".equals(uri.scheme, ignoreCase = true)) {
                 val projection = arrayOf(MediaStore.Images.Media.DATA)
                 var cursor: Cursor? = null
                 try {
-                    cursor = context.getContentResolver().query(uri, projection, selection, selectionArgs, null)
-
-                    val column_index: Int = cursor!!.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
+                    cursor = context.contentResolver.query(uri, projection, selection, selectionArgs, null)
+                    val columnIndex: Int = cursor!!.getColumnIndexOrThrow(MediaStore.Images.Media.DATA)
                     if (cursor.moveToFirst()) {
-                        return cursor.getString(column_index)
+                        return cursor.getString(columnIndex)
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
+                } finally {
+                    cursor?.close()
                 }
-            } else if ("file".equals(uri.getScheme(), ignoreCase = true)) {
-                return uri.getPath()
+            } else if ("file".equals(uri.scheme, ignoreCase = true)) {
+                return uri.path
             }
             return null
         }
+
 
         /**
          * @param uri The Uri to check.
